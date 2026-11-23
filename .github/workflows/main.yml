@@ -19,6 +19,25 @@ jobs:
       - name: Распаковать проект
         working-directory: .
         run: unzip -q "$(ls *.zip | head -n1)"
+      - name: Исправить код под новый TDLib
+        run: |
+          python3 - <<'EOF'
+          import re
+          p = 'core/src/main/kotlin/dev/limonchik/tgvpn/core/TgClient.kt'
+          s = open(p, encoding='utf-8').read()
+          s = s.replace('private val proxy: ProxyConfig', 'private val cfg: ProxyConfig')
+          new = '''client.send(TdApi.AddProxy().apply {
+                      proxy = TdApi.Proxy().apply {
+                          server = "127.0.0.1"
+                          port = cfg.socksPort
+                          type = TdApi.ProxyTypeSocks5(cfg.user, cfg.pass)
+                      }
+                      enable = true
+                  }) { report(it) }'''
+          s = re.sub(r'client\.send\(TdApi\.AddProxy\(\)\.apply \{.*?\}\) \{ report\(it\) \}', lambda m: new, s, flags=re.S)
+          assert 'TdApi.Proxy()' in s
+          open(p, 'w', encoding='utf-8').write(s)
+          EOF
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
