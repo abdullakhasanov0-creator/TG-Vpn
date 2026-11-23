@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Распаковать проект
         working-directory: .
-        run: unzip -q limonchik-tg-vpn.zip
+        run: unzip -q "$(ls *.zip | head -n1)"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
