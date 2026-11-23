@@ -1,0 +1,45 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  TG_API_ID: "ВСТАВЬ_ЧИСЛО"
+  TG_API_HASH: "ВСТАВЬ_ХЭШ"
+
+defaults:
+  run:
+    working-directory: limonchik-tg-vpn
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Распаковать проект
+        working-directory: .
+        run: unzip -q limonchik-tg-vpn.zip
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - name: Скачать ядро Xray
+        run: |
+          mkdir -p libs
+          curl -fL https://github.com/2dust/AndroidLibXrayLite/releases/latest/download/libv2ray.aar -o libs/libv2ray.aar
+      - name: Ключи Telegram API
+        run: |
+          printf '%s\n' "TG_API_ID=$TG_API_ID" "TG_API_HASH=$TG_API_HASH" > local.properties
+      - name: Сборка
+        run: gradle :app-phone:assembleDebug :app-watch:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-phone
+          path: limonchik-tg-vpn/app-phone/build/outputs/apk/debug/*.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-watch
+          path: limonchik-tg-vpn/app-watch/build/outputs/apk/debug/*.apk
